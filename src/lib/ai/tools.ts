@@ -18,32 +18,63 @@ export interface AgentContext {
 const TOOLS_EXCLUDED_FROM_BINDING = ["searchKnowledgeBase", "getBusinessHours"] as const;
 
 const PRODUCT_PATTERN =
-  /\b(product|stock|inventory|size|available|price|gown|suit|dress|wear|collection|bridal|medium|large|small)\b/i;
+  /\b(product|stock|inventory|size|available|price|gown|suit|dress|wear|collection|bridal|medium|large|small|lehenga|lehnga|skirt|veil)\b/i;
 const ORDER_PATTERN =
   /\b(order|tracking|track|shipment|ship|deliver|delivery|where is my)\b/i;
 const PURCHASE_PATTERN =
-  /\b(buy|purchase|checkout|place an order|want to order|order the|add to cart)\b/i;
+  /\b(buy|purchase|checkout|place an order|want to order|wanna order|order the|add to cart|interested in|i want a|i want the)\b/i;
 const TICKET_PATTERN =
   /\b(refund|complaint|escalat|human|manager|speak to someone|unsatisfied|wrong item|damaged|want to return|return my|return this)\b/i;
+const CHECKOUT_READY_PATTERN =
+  /\S+@\S+\.\S+/;
 
-export function selectToolsForMessage(message: string, ctx: AgentContext) {
-  const text = message.toLowerCase();
+function buildConversationText(
+  message: string,
+  history?: { content: string }[],
+) {
+  return [...(history ?? []).map((entry) => entry.content), message].join("\n");
+}
+
+export function selectToolsForMessage(
+  message: string,
+  ctx: AgentContext,
+  options?: {
+    history?: { content: string }[];
+    hasProductContext?: boolean;
+  },
+) {
+  const text = buildConversationText(message, options?.history).toLowerCase();
   const selected = new Set<string>();
 
-  if (PRODUCT_PATTERN.test(text) || PURCHASE_PATTERN.test(text)) {
+  const purchaseIntent = PURCHASE_PATTERN.test(text);
+  const orderLookupIntent =
+    ORDER_PATTERN.test(text) &&
+    !purchaseIntent &&
+    !/\b(wanna order|want to order|place an order|interested in)\b/i.test(text);
+  const checkoutReady = CHECKOUT_READY_PATTERN.test(message);
+
+  if (!options?.hasProductContext && (PRODUCT_PATTERN.test(text) || purchaseIntent)) {
     selected.add("getProduct");
     selected.add("checkInventory");
   }
-  if (ORDER_PATTERN.test(text)) {
+
+  if (orderLookupIntent) {
     selected.add("getOrderStatus");
     if (ctx.customerId) selected.add("getCustomerOrders");
   }
-  if (PURCHASE_PATTERN.test(text)) {
+
+  if (purchaseIntent || (checkoutReady && options?.hasProductContext)) {
     selected.add("createOrder");
   }
+
+  if (options?.hasProductContext && (purchaseIntent || checkoutReady)) {
+    selected.delete("getProduct");
+    selected.delete("checkInventory");
+  }
+
   if (TICKET_PATTERN.test(text)) {
     selected.add("createTicket");
-    if (ORDER_PATTERN.test(text)) selected.add("getOrderStatus");
+    if (orderLookupIntent) selected.add("getOrderStatus");
   }
 
   const allTools = buildTools(ctx);
