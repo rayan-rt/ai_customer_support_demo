@@ -1,0 +1,4 @@
+
+- check existing setup, seed.sql file foe vectorization (pgvector)
+
+- widget

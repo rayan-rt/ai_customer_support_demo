@@ -1,69 +1,93 @@
+import Link from "next/link";
 import Image from "next/image";
+import { CartHeaderWrapper } from "@/components/storefront/shell";
+import { listProducts } from "@/lib/services/product-service";
+import { formatCurrency } from "@/lib/utils/format";
+import { BRAND_NAME } from "@/lib/config/env";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const products = await listProducts();
+  const featured = products.slice(0, 4);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+    <CartHeaderWrapper>
+      <section className="relative overflow-hidden bg-[var(--surface)]">
+        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-20 md:grid-cols-2 md:items-center">
+          <div>
+            <p className="text-sm uppercase tracking-[0.25em] text-[var(--accent)]">
+              New Collection
+            </p>
+            <h1 className="mt-4 font-serif text-5xl leading-tight text-[var(--foreground)]">
+              Modern bridal elegance, crafted for your moment
+            </h1>
+            <p className="mt-6 max-w-lg text-[var(--muted)]">
+              Discover curated gowns, suits, and occasion wear from {BRAND_NAME}.
+              Shop online or chat with our AI stylist for personalized help.
+            </p>
+            <div className="mt-8 flex gap-4">
+              <Link
+                href="/products"
+                className="rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-medium text-white"
+              >
+                Shop Collection
+              </Link>
+              <Link
+                href="/support"
+                className="rounded-full border border-[var(--border)] px-6 py-3 text-sm"
+              >
+                Ask AI Support
+              </Link>
+            </div>
+          </div>
+          <div className="relative aspect-[4/5] overflow-hidden rounded-3xl">
             <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+              src="https://images.unsplash.com/photo-1515377901643-4a9748da2991?w=800"
+              alt="Bridal gown"
+              fill
+              className="object-cover"
+              priority
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 py-16">
+        <div className="mb-8 flex items-end justify-between">
+          <h2 className="font-serif text-2xl">Featured Pieces</h2>
+          <Link href="/products" className="text-sm text-[var(--accent)] underline">
+            View all
+          </Link>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {featured.map((product) => (
+            <Link
+              key={product.id}
+              href={`/products/${product.slug}`}
+              className="group overflow-hidden rounded-2xl border border-[var(--border)] bg-white transition hover:shadow-md"
+            >
+              <div className="relative aspect-[3/4] overflow-hidden bg-[var(--surface)]">
+                {product.image_url ? (
+                  <Image
+                    src={product.image_url}
+                    alt={product.name}
+                    fill
+                    className="object-cover transition group-hover:scale-105"
+                  />
+                ) : null}
+              </div>
+              <div className="p-4">
+                <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
+                  {product.category}
+                </p>
+                <h3 className="mt-1 font-medium">{product.name}</h3>
+                <p className="mt-1 text-[var(--accent)]">{formatCurrency(Number(product.price))}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+    </CartHeaderWrapper>
   );
 }
